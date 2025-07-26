@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Угадай мелодию</title>
+    <style>
+        @font-face {
+            font-family: 'SB Sans';
+            src: url('https://fonts.example.com/SBSans-Regular.woff2') format('woff2'),
+                 url('https://fonts.example.com/SBSans-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'SB Sans';
+            src: url('https://fonts.example.com/SBSans-Semibold.woff2') format('woff2'),
+                 url('https://fonts.example.com/SBSans-Semibold.woff') format('woff');
+            font-weight: 600;
+            font-style: normal;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SB Sans', Arial, sans-serif;
+            background-color: #0C0C0C;
+            color: white;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Главный экран */
+        .main-screen {
+            background-image: url('Musicback.png');
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            transition: filter 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-screen.blur {
+            filter: blur(30px);
+        }
+
+        .main-title {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: 600;
+            font-size: 60pt;
+            color: #FFFFFF;
+            margin-bottom: 30px;
+            max-width: 800px;
+        }
+
+        .main-description {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 22pt;
+            color: #BFBFBF;
+            margin-bottom: 60px;
+            max-width: 800px;
+        }
+
+        .main-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .start-btn {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 20pt;
+            color: #0C0C0C;
+            background-color: #04C9B0;
+            border: none;
+            border-radius: 16px;
+            padding: 12px 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .offer-btn {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 16pt;
+            color: #BFBFBF;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: all 0.3s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(4, 201, 176, 0.5);
+            background-color: #00B49D;
+        }
+
+        .offer-btn:hover {
+            color: #FFFFFF;
+        }
+
+        /* Попап со слайдами */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1080px;
+            max-width: 90%;
+            height: 800px;
+            max-height: 90vh;
+            background-color: rgba(26, 26, 26, 0.8);
+            border-radius: 48px;
+            z-index: 200;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+        }
+
+        .slide {
+            display: none;
+            height: 100%;
+            padding: 60px;
+            box-sizing: border-box;
+            position: relative;
+            flex-direction: column;
+        }
+
+       .slide::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 300px; /* Изменено с 200px на 300px */
+            height: 300px; /* Изменено с 200px на 300px */
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: right bottom;
+            z-index: -1;
+            opacity: 0.7;
+        }
+
+        .slide::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 300px; /* Изменено с 200px на 300px */
+            height: 300px; /* Изменено с 200px на 300px */
+            background: linear-gradient(to left top, rgba(26,26,26,1) 0%, rgba(26,26,26,0) 50%);
+            z-index: -1;
+            border-bottom-right-radius: 48px;
+        }
+
+
+        .slide.active {
+            display: flex;
+        }
+
+        /* Специфичные фоны для слайдов */
+        #slide1::before, #slide4::before {
+            background-image: url('Slide 1.png');
+        }
+        
+        #slide2::before, #slide5::before {
+            background-image: url('Slide 2.png');
+        }
+        
+        #slide3::before, #slide6::before {
+            background-image: url('Slide 3.png');
+        }
+
+        /* Счетчик слайдов */
+        .progress {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 16pt;
+            color: #FFFFFF;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        /* Вопрос */
+        .question {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: 600;
+            font-size: 22pt;
+            color: #FFFFFF;
+            text-align: left;
+            margin-bottom: 30px;
+        }
+
+        /* Блок воспроизведения */
+        .play-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .play-text {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 16pt;
+            color: #04C9B0;
+            order: 2;
+        }
+
+        .play-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            width: 40px; /* Фиксированный размер для десктопа */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+            order: 1;
+        }
+
+
+          .play-btn:hover {
+            transform: scale(1.05); /* Легкое увеличение при наведении */
+        }
+      .play-btn img {
+            width: 100%; /* Занимает всю площадь кнопки */
+            height: 100%;
+            transition: transform 0.2s;
+        }
+
+        .play-btn.playing img {
+            transform: scale(0.95); /* Легкое уменьшение при воспроизведении */
+        }
+
+        /* Варианты ответов */
+        .answers {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 10px;
+            flex-grow: 1;
+        }
+
+        .answer {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 20pt;
+            color: #FFFFFF;
+            background-color: #2A2A2A;
+            border: none;
+            border-radius: 16px;
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-height: 50px;
+            box-sizing: border-box;
+        }
+
+        .answer:hover {
+            background-color: #3A3A3A;
+        }
+
+        .answer.correct {
+            background-color: #04C9B0;
+            color: #0C0C0C;
+        }
+
+        .answer.incorrect {
+            background-color: #980042;
+            color: #FFFFFF;
+        }
+
+        /* Подсказка */
+        .hint {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 12pt;
+            color: #BFBFBF;
+            text-align: left;
+            margin-top: 10px;
+            padding: 0 10px;
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+            transition: opacity 0.3s, height 0.3s;
+            line-height: 1.4;
+        }
+
+        .hint.show {
+            opacity: 1;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        /* Финальный слайд */
+        .result-text {
+            font-family: 'SB Sans', Arial, sans-serif;
+            text-align: left;
+            margin-bottom: 60px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .result-score {
+            font-size: 36pt;
+            margin-bottom: 30px;
+            color: #04C9B0;
+            font-weight: 600;
+        }
+
+        .result-message {
+            font-size: 20pt;
+            line-height: 1.4;
+            font-weight: normal;
+            max-width: 100%;
+        }
+
+        .final-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .share-btn, .try-btn {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 20pt;
+            color: #0C0C0C;
+            background-color: #04C9B0;
+            border: none;
+            border-radius: 16px;
+            padding: 12px 0;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+        }
+
+        .try-btn {
+            background-color: transparent;
+            border: 1.5px solid #04C9B0;
+            color: #04C9B0;
+        }
+
+        .share-btn:hover, .try-btn:hover {
+            transform: scale(1.05);
+            background-color: #00B49D;
+            color: #0C0C0C;
+            border-color: #00B49D;
+        }
+
+        /* Меню */
+        .menu {
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            background-color: rgba(12, 12, 12, 0.8);
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+            top: 0;
+        }
+
+        .logo {
+            height: 30px;
+        }
+
+        .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .info-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+
+        .info-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .info-btn svg {
+            width: 100%;
+            height: 100%;
+            fill: #FFFFFF;
+        }
+
+        .try-btn-menu {
+            font-family: 'SB Sans', Arial, sans-serif;
+            font-weight: normal;
+            font-size: 16px;
+            color: #04C9B0;
+            background: transparent;
+            border: 1.5px solid #04C9B0;
+            border-radius: 12px;
+            padding: 8px 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .try-btn-menu:hover {
+            background-color: #00B49D;
+            color: #0C0C0C;
+            border-color: #00B49D;
+        }
+
+        /* Аудиоплеер */
+        #audio-player {
+            display: none;
+        }
+
+        /* Конфетти */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 150;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: fall linear forwards;
+            background: linear-gradient(135deg, #04C9B0, #0077B6);
+            box-shadow: 0 0 5px rgba(4, 201, 176, 0.5);
+        }
+
+        .confetti:nth-child(4n) {
+            background: linear-gradient(135deg, #00B4D8, #0096C7);
+        }
+
+        .confetti:nth-child(3n) {
+            background: linear-gradient(135deg, #0096C7, #0077B6);
+        }
+
+        .confetti:nth-child(5n) {
+            background: linear-gradient(135deg, #00B49D, #0077B6);
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Оферта */
+        .offer-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            background-color: rgba(26, 26, 26, 0.95);
+            border-radius: 24px;
+            z-index: 300;
+            padding: 40px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
+            overflow-y: auto;
+        }
+
+        .offer-content {
+            color: #FFFFFF;
+            line-height: 1.6;
+            font-size: 16pt;
+        }
+
+        .close-offer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #BFBFBF;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .main-screen {
+                background-image: url('mobileback.png');
+            }
+            
+            .main-title {
+                font-size: 28pt;
+                max-width: 300px;
+            }
+            
+            .main-description {
+                font-size: 16pt;
+                max-width: 300px;
+                margin-bottom: 40px;
+            }
+            
+            .main-buttons {
+                max-width: 300px;
+            }
+            
+            .start-btn {
+                font-size: 16pt;
+                padding: 10px 20px;
+            }
+            
+            .offer-btn {
+                font-size: 12pt;
+            }
+            
+            .popup {
+                width: 95%;
+                padding: 20px;
+                height: auto;
+                max-height: 95vh;
+                border-radius: 24px;
+            }
+            
+            .slide {
+                padding: 30px 20px;
+            }
+            
+             .slide::before {
+                width: 150px; /* Пропорционально уменьшено для мобильных */
+                height: 150px;
+            }
+            
+            .slide::after {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .question {
+                font-size: 18pt;
+                margin-bottom: 20px;
+            }
+            
+            .play-text {
+                font-size: 14pt;
+            }
+            
+             .play-btn {
+                width: 48px; /* Увеличено на 20% (40px * 1.2 = 48px) */
+                height: 48px;
+            }
+            
+            .play-btn img {
+                width: 100%;
+                height: 100%;
+            }
+                   
+            .answers {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .answer {
+                font-size: 16pt;
+                padding: 8px 12px;
+                min-height: 40px;
+            }
+            
+            .hint {
+                font-size: 10pt;
+                padding: 0;
+            }
+            
+            .result-text {
+                margin-bottom: 40px;
+            }
+            
+            .result-score {
+                font-size: 24pt;
+                margin-bottom: 20px;
+            }
+            
+            .result-message {
+                font-size: 16pt;
+            }
+            
+            .final-buttons {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .share-btn, .try-btn {
+                font-size: 16pt;
+                padding: 10px 0;
+                width: 100%;
+            }
+            
+            .progress {
+                font-size: 14pt;
+                margin-bottom: 20px;
+            }
+            
+            .menu {
+                padding: 0 15px;
+            }
+            
+            .try-btn-menu {
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+            
+            .offer-popup {
+                width: 95%;
+                padding: 30px 20px;
+            }
+            
+            .offer-content {
+                font-size: 12pt;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Конфетти -->
+    <div id="confetti-container" class="confetti-container"></div>
+
+    <!-- Меню -->
+    <div class="menu">
+        <img src="Logo.svg" alt="Логотип" class="logo">
+        <div class="menu-right">
+            <a href="https://blzvuk-b2b.com/terms" class="info-btn" target="_blank">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+            </a>
+            <a href="https://blzvuk-b2b.com" class="try-btn-menu" target="_blank">Попробовать</a>
+        </div>
+    </div>
+
+    <!-- Главный экран -->
+    <div class="main-screen" id="mainScreen">
+        <h1 class="main-title">Угадай мелодию!</h1>
+        <p class="main-description">Проверь свои знания музыки.<br>Угадай 6 мелодий и получи приз!</p>
+        <div class="main-buttons">
+            <button class="start-btn" id="startBtn">Начать игру</button>
+            <button class="offer-btn" id="offerBtn">Оферта</button>
+        </div>
+    </div>
+
+    <!-- Попап оферты -->
+    <div class="offer-popup" id="offerPopup">
+        <button class="close-offer" id="closeOffer">×</button>
+        <div class="offer-content">
+            <h2>Договор публичной оферты</h2>
+            <p>Здесь будет текст вашего договора публичной оферты. Вы можете добавить любые условия использования вашего сервиса, правила проведения акции и другую юридическую информацию.</p>
+            <p>Пример текста: Настоящий договор является публичной офертой компании "Blzvuk" (далее - Исполнитель) и содержит все существенные условия оказания услуг.</p>
+            <p>1. Общие положения</p>
+            <p>1.1. Акция "Угадай мелодию" проводится с 01.01.2023 по 31.12.2023.</p>
+            <p>1.2. Участником акции может стать любое физическое лицо, достигшее 18 лет.</p>
+            <p>2. Условия акции</p>
+            <p>2.1. Для участия необходимо угадать 6 мелодий из предложенных.</p>
+            <p>2.2. Призовой фонд акции составляет 100 000 рублей.</p>
+            <p>3. Конфиденциальность</p>
+            <p>3.1. Все персональные данные участников обрабатываются в соответствии с законодательством РФ.</p>
+        </div>
+    </div>
+
+    <!-- Попап со слайдами -->
+    <div class="popup" id="popup">
+        <!-- Слайд 1: Вопрос 1 -->
+        <div class="slide" id="slide1">
+            <div class="progress">1/6</div>
+            <h2 class="question">Какому бренду принадлежит данный джингл?</h2>
+            <div class="play-container">
+                <button class="play-btn" id="playBtn1" data-audio="song1.mp3">
+                    <img src="Play.svg" alt="Play">
+                </button>
+                <span class="play-text">Воспроизведение</span>
+            </div>
+            <div class="answers">
+                <button class="answer" data-correct="false">Microsoft</button>
+                <button class="answer" data-correct="false">Apple</button>
+                <button class="answer" data-correct="false">Samsung</button>
+                <button class="answer" data-correct="true">Intel</button>
+            </div>
+            <div class="hint" id="hint1">Джингл Intel был создан в 1994 году композитором Уолтером Верцовой (Walter Werzowa). Он состоит из 5 нот и 20 звуков от различных инструментов. Сегодня это один из самых узнаваемых аудиологотипов.</div>
+        </div>
+
+        <!-- Слайд 2: Вопрос 2 -->
+        <div class="slide" id="slide2">
+            <div class="progress">2/6</div>
+            <h2 class="question">Немного ностальгии. Кому принадлежит данный джингл?</h2>
+            <div class="play-container">
+                <button class="play-btn" id="playBtn2" data-audio="song2.mp3">
+                    <img src="Play.svg" alt="Play">
+                </button>
+                <span class="play-text">Воспроизведение</span>
+            </div>
+            <div class="answers">
+                <button class="answer" data-correct="true">Nokia</button>
+                <button class="answer" data-correct="false">Microsoft (win xp)</button>
+                <button class="answer" data-correct="false">Motorola</button>
+                <button class="answer" data-correct="false">Sony</button>
+            </div>
+            <div class="hint" id="hint2">Это фрагмент произведения Francisco Tárrega «Gran Vals», написанного в 1902 году. В 1992 Нокиа использовала этот звук в рекламе, в 94 - эта мелодия стала Рингтоном №5 в телефонах бренда.</div>
+        </div>
+
+        <!-- Слайд 3: Вопрос 3 -->
+        <div class="slide" id="slide3">
+            <div class="progress">3/6</div>
+            <h2 class="question">Какому бренду принадлежит данный джингл?</h2>
+            <div class="play-container">
+                <button class="play-btn" id="playBtn3" data-audio="song3.mp3">
+                    <img src="Play.svg" alt="Play">
+                </button>
+                <span class="play-text">Воспроизведение</span>
+            </div>
+            <div class="answers">
+                <button class="answer" data-correct="false">МТС</button>
+                <button class="answer" data-correct="true">Мегафон</button>
+                <button class="answer" data-correct="false">Ростелеком</button>
+                <button class="answer" data-correct="false">Билайн</button>
+            </div>
+            <div class="hint" id="hint3">Слоган «Будущее зависит от тебя» и аудиоджингл стали одним из самых узнаваемых элементов бренда Мегафон в 2000-х. В рекламе часто использовались голоса звёзд, а сама фраза жила отдельно от бренда — люди узнавали её даже без логотипа.</div>
+        </div>
+
+        <!-- Слайд 4: Вопрос 4 -->
+        <div class="slide" id="slide4">
+            <div class="progress">4/6</div>
+            <h2 class="question">Что говорит данный персонаж?</h2>
+            <div class="play-container">
+                <button class="play-btn" id="playBtn4" data-audio="song4.mp3">
+                    <img src="Play.svg" alt="Play">
+                </button>
+                <span class="play-text">Воспроизведение</span>
+            </div>
+            <div class="answers">
+                <button class="answer" data-correct="false">Одна ошибка и ты…</button>
+                <button class="answer" data-correct="true">Нельзя просто взять и…</button>
+                <button class="answer" data-correct="false">Не важно, что ты падал, важно…</button>
+                <button class="answer" data-correct="false">Нам нужно сфокусироваться…</button>
+            </div>
+            <div class="hint" id="hint4">Мем с Боромиром живёт в основном в визуальном формате, но мы автоматически слышим его голос и интонацию, даже глядя на картинку. То же работает и с брендами: если звук сильный, он остаётся в памяти — даже если не звучит.</div>
+        </div>
+
+        <!-- Слайд 5: Вопрос 5 -->
+        <div class="slide" id="slide5">
+            <div class="progress">5/6</div>
+            <h2 class="question">Какой бренд звучит как «Ta-dum»?</h2>
+            <div class="play-container">
+                <button class="play-btn" id="playBtn5" data-audio="song5.mp3">
+                    <img src="Play.svg" alt="Play">
+                </button>
+                <span class="play-text">Воспроизведение</span>
+            </div>
+            <div class="answers">
+                <button class="answer" data-correct="false">HBO</button>
+                <button class="answer" data-correct="false">YouTube</button>
+                <button class="answer" data-correct="true">Netflix</button>
+                <button class="answer" data-correct="false">Marvel Studios</button>
+            </div>
+            <div class="hint" id="hint5">Аудиологотип Нетфликса тоже имеет занимательную историю. ВП по продукту Тодд Йеллен хотел сделать так, чтобы звук Нетфликса не было похож на софтверную компанию или компьютерные игры. Звук должен был формировать предвкушение - как «сейчас я увижу какую-то интересную историю!».</div>
+        </div>
+
+        <!-- Слайд 6: Вопрос 6 -->
+        <div class="slide" id="slide6">
+            <div class="progress">6/6</div>
+            <h2 class="question">Звук оплаты какого сервиса вы сейчас услышали?</h2>
+            <div class="play-container">
+                <button class="play-btn" id="playBtn6" data-audio="song6.mp3">
+                    <img src="Play.svg" alt="Play">
+                </button>
+                <span class="play-text">Воспроизведение</span>
+            </div>
+            <div class="answers">
+                <button class="answer" data-correct="false">Visa</button>
+                <button class="answer" data-correct="false">Apple Pay</button>
+                <button class="answer" data-correct="true">Google Pay</button>
+                <button class="answer" data-correct="false">Master Card</button>
+            </div>
+            <div class="hint" id="hint6">У всех популярных платёжных систем (Apple Pay, Google Pay, Visa, Mastercard) звуки оплаты предельно похожи. Это сделано для того, чтобы они были нейтральными, короткими и не раздражали пользователя. Сегодня это скорее UX-решение, чем элемент брендинга. А значит — у компаний есть шанс создать свой узнаваемый звук.</div>
+        </div>
+
+        <!-- Финальный слайд (0 правильных ответов) -->
+        <div class="slide" id="finalSlide0">
+            <div class="result-text">
+                <div class="result-score">Вы угадали <span id="score0">0</span> из 6</div>
+                <div class="result-message">
+                    Возможно вы не очень часто обращаете внимание на аудиомаркетинг, но 31% клиентов возвращаются в заведение, когда музыка им нравится.
+                </div>
+            </div>
+            <div class="final-buttons">
+                <button class="share-btn" id="shareBtn0">Поделиться</button>
+                <a href="https://blzvuk-b2b.com" class="try-btn" target="_blank">Попробовать</a>
+            </div>
+        </div>
+
+        <!-- Финальный слайд (1-3 правильных ответа) -->
+        <div class="slide" id="finalSlide1-3">
+            <div class="result-text">
+                <div class="result-score">Вы угадали <span id="score1-3">0</span> из 6</div>
+                <div class="result-message">
+                    Хороший результат! Вы часто прислушиваетесь к музыке в заведениях. Согласно исследованиям 84% согласны с тем, что качественная музыка улучшает опыт посещения!
+                </div>
+            </div>
+            <div class="final-buttons">
+                <button class="share-btn" id="shareBtn1-3">Поделиться</button>
+                <a href="https://blzvuk-b2b.com" class="try-btn" target="_blank">Попробовать</a>
+            </div>
+        </div>
+
+        <!-- Финальный слайд (4-6 правильных ответов) -->
+        <div class="slide" id="finalSlide4-6">
+            <div class="result-text">
+                <div class="result-score">Вы угадали <span id="score4-6">0</span> из 6</div>
+                <div class="result-message">
+                    Ого, да вы аудиофил! Вы часто прислушиваетесь к музыке в заведениях, наверное потому что знаете, что 21% посетителей рекомендуют места с приятной музыкой своим друзьям!
+                </div>
+            </div>
+            <div class="final-buttons">
+                <button class="share-btn" id="shareBtn4-6">Поделиться</button>
+                <a href="https://blzvuk-b2b.com" class="try-btn" target="_blank">Попробовать</a>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audio-player"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startBtn = document.getElementById('startBtn');
+            const offerBtn = document.getElementById('offerBtn');
+            const closeOffer = document.getElementById('closeOffer');
+            const offerPopup = document.getElementById('offerPopup');
+            const popup = document.getElementById('popup');
+            const mainScreen = document.getElementById('mainScreen');
+            const slides = document.querySelectorAll('.slide');
+            const playBtns = document.querySelectorAll('.play-btn');
+            const answerBtns = document.querySelectorAll('.answer');
+            const audioPlayer = document.getElementById('audio-player');
+            const score0Element = document.getElementById('score0');
+            const score1_3Element = document.getElementById('score1-3');
+            const score4_6Element = document.getElementById('score4-6');
+            const finalSlide0 = document.getElementById('finalSlide0');
+            const finalSlide1_3 = document.getElementById('finalSlide1-3');
+            const finalSlide4_6 = document.getElementById('finalSlide4-6');
+            const shareBtn0 = document.getElementById('shareBtn0');
+            const shareBtn1_3 = document.getElementById('shareBtn1-3');
+            const shareBtn4_6 = document.getElementById('shareBtn4-6');
+            const confettiContainer = document.getElementById('confetti-container');
+            
+            let currentSlide = 0;
+            let score = 0;
+            let currentAudio = null;
+            let isPlaying = false;
+
+            // Установка громкости 50%
+            audioPlayer.volume = 0.5;
+
+            // Начало игры
+            startBtn.addEventListener('click', function() {
+                // Сброс состояния игры
+                score = 0;
+                currentSlide = 0;
+                
+                // Скрыть все слайды
+                slides.forEach(slide => {
+                    slide.classList.remove('active');
+                    // Скрываем все подсказки при старте игры
+                    const hint = slide.querySelector('.hint');
+                    if (hint) hint.classList.remove('show');
+                });
+                
+                // Показать первый слайд
+                slides[0].classList.add('active');
+                
+                // Показать попап и размыть фон
+                popup.style.display = 'block';
+                mainScreen.classList.add('blur');
+            });
+
+            // Открытие оферты
+            offerBtn.addEventListener('click', function() {
+                offerPopup.style.display = 'block';
+                mainScreen.classList.add('blur');
+            });
+
+            // Закрытие оферты
+            closeOffer.addEventListener('click', function() {
+                offerPopup.style.display = 'none';
+                mainScreen.classList.remove('blur');
+            });
+
+            // Воспроизведение аудио
+           playBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const audioSrc = this.getAttribute('data-audio');
+                    const playIcon = this.querySelector('img');
+                    
+                    // Если уже играет этот трек - пауза
+                    if (currentAudio && audioPlayer.src.includes(audioSrc)) {
+                        if (isPlaying) {
+                            audioPlayer.pause();
+                            playIcon.src = 'Play.svg';
+                            this.classList.remove('playing');
+                            isPlaying = false;
+                        } else {
+                            audioPlayer.play();
+                            playIcon.src = 'Pause.svg';
+                            this.classList.add('playing');
+                            isPlaying = true;
+                        }
+                        return;
+                    }
+                    
+                    // Останавливаем текущее воспроизведение
+                    document.querySelectorAll('.play-btn').forEach(b => {
+                        b.querySelector('img').src = 'Play.svg';
+                        b.classList.remove('playing');
+                    });
+                    
+                    // Устанавливаем новый источник
+                    audioPlayer.src = audioSrc;
+                    audioPlayer.play();
+                    currentAudio = audioPlayer;
+                    isPlaying = true;
+                    playIcon.src = 'Pause.svg';
+                    this.classList.add('playing');
+                    
+                    // Обработчик окончания трека
+                    audioPlayer.onended = function() {
+                        document.querySelectorAll('.play-btn').forEach(b => {
+                            b.querySelector('img').src = 'Play.svg';
+                            b.classList.remove('playing');
+                        });
+                        isPlaying = false;
+                    };
+                });
+            });
+
+            // Обработка ответов
+            answerBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Проверяем ответ
+                    const isCorrect = this.getAttribute('data-correct') === 'true';
+                    
+                    if (isCorrect) {
+                        score++;
+                    }
+                    
+                    // Подсвечиваем ответы
+                    const answers = this.parentElement.querySelectorAll('.answer');
+                    answers.forEach(answer => {
+                        answer.disabled = true;
+                        if (answer.getAttribute('data-correct') === 'true') {
+                            answer.classList.add('correct');
+                        } else {
+                            answer.classList.add('incorrect');
+                        }
+                    });
+
+                    // Показываем подсказку
+                    const hint = this.closest('.slide').querySelector('.hint');
+                    hint.classList.add('show');
+                    
+                    // Останавливаем музыку
+                    if (currentAudio) {
+                        audioPlayer.pause();
+                        document.querySelectorAll('.play-btn img').forEach(img => {
+                            img.src = 'Play.svg';
+                        });
+                        isPlaying = false;
+                    }
+                    
+                    // Переходим к следующему слайду через 2 секунды
+                    setTimeout(() => {
+                        const nextSlide = currentSlide + 1;
+                        if (nextSlide < 6) { // 6 вопросов (слайды 0-5)
+                            goToSlide(nextSlide);
+                        } else {
+                            // Показываем соответствующий финальный слайд
+                            showFinalSlide();
+                        }
+                    }, 2000);
+                });
+            });
+
+            // Функция перехода к слайду
+            function goToSlide(slideIndex) {
+                // Скрываем подсказку на текущем слайде
+                const currentHint = slides[currentSlide].querySelector('.hint');
+                if (currentHint) {
+                    currentHint.classList.remove('show');
+                }
+                
+                slides[currentSlide].classList.remove('active');
+                slides[slideIndex].classList.add('active');
+                currentSlide = slideIndex;
+                
+                // Останавливаем аудио при переходе
+                if (currentAudio) {
+                    audioPlayer.pause();
+                    document.querySelectorAll('.play-btn img').forEach(img => {
+                        img.src = 'Play.svg';
+                    });
+                    isPlaying = false;
+                }
+            }
+
+            // Показать финальный слайд в зависимости от результата
+            function showFinalSlide() {
+                // Скрыть текущий слайд
+                slides[currentSlide].classList.remove('active');
+                
+                // Обновить счет
+                score0Element.textContent = score;
+                score1_3Element.textContent = score;
+                score4_6Element.textContent = score;
+                
+                // Показать соответствующий финальный слайд
+                if (score === 0) {
+                    finalSlide0.classList.add('active');
+                } else if (score <= 3) {
+                    finalSlide1_3.classList.add('active');
+                    createConfetti();
+                } else {
+                    finalSlide4_6.classList.add('active');
+                    createConfetti();
+                }
+            }
+
+            // Создание конфетти с градиентами
+            function createConfetti() {
+                // Очищаем предыдущие конфетти
+                confettiContainer.innerHTML = '';
+                
+                // Создаем 150 частиц конфетти
+                for (let i = 0; i < 150; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.classList.add('confetti');
+                    
+                    // Случайные параметры
+                    const size = Math.random() * 10 + 8;
+                    const duration = Math.random() * 3 + 2;
+                    const delay = Math.random() * 2;
+                    const left = Math.random() * 100;
+                    
+                    // Применяем параметры
+                    confetti.style.left = left + '%';
+                    confetti.style.top = -20 + 'px';
+                    confetti.style.width = size + 'px';
+                    confetti.style.height = size + 'px';
+                    confetti.style.animationDuration = duration + 's';
+                    confetti.style.animationDelay = delay + 's';
+                    
+                    // Случайный градиент
+                    const colors = [
+                        ['#04C9B0', '#0077B6'], // зелено-синий
+                        ['#00B4D8', '#0096C7'], // голубой-синий
+                        ['#0096C7', '#0077B6'], // синий-темно-синий
+                        ['#00B49D', '#0077B6'],  // зеленый-синий
+                        ['#1A8C7D', '#1E6091']   // темные оттенки
+                    ];
+                    const gradient = colors[Math.floor(Math.random() * colors.length)];
+                    const angle = Math.floor(Math.random() * 360);
+                    
+                    confetti.style.background = `linear-gradient(${angle}deg, ${gradient[0]}, ${gradient[1]})`;
+                    confetti.style.boxShadow = `0 0 5px ${gradient[0]}`;
+                    
+                    confettiContainer.appendChild(confetti);
+                }
+            }
+
+            // Кнопка "Поделиться" (все варианты)
+            [shareBtn0, shareBtn1_3, shareBtn4_6].forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Угадай мелодию',
+                            text: `Я угадал ${score} из 6 мелодий! Попробуй и ты!`,
+                            url: window.location.href
+                        }).catch(err => {
+                            console.log('Ошибка при использовании API share:', err);
+                            copyToClipboard();
+                        });
+                    } else {
+                        copyToClipboard();
+                    }
+                });
+            });
+
+            // Функция копирования ссылки
+            function copyToClipboard() {
+                const el = document.createElement('textarea');
+                el.value = window.location.href;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                alert('Ссылка скопирована в буфер обмена!');
+            }
+        });
+    </script>
+</body>
+</html>
